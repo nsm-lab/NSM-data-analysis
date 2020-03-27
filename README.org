@@ -1,0 +1,148 @@
+#+TITLE:
+* Nix security analysis environment (Quickly start)
+nix-build with Julia internal R and Haskell, Python
+#+BEGIN_EXAMPLE
+nix-build 
+#+END_EXAMPLE
+nix-shell with R-jupyter-kernal
+#+BEGIN_EXAMPLE
+nix-shell r-shell.nix
+#+END_EXAMPLE
+Global nix config setting
+~Notice~ if you have another ~config~~ setting in ~config.nix~, Do not copy
+~config.nix~ to PATH. just extended the ~config.nix~
+#+BEGIN_EXAMPLE
+cp config.nix ~/.config/nixpkgs/.
+#+END_EXAMPLE
+
+Using Binary cache to speed nix-build
+#+BEGIN_EXAMPLE
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+sudo mkdir -p /etc/nix
+echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf
+sudo pkill nix-daemon
+cachix use nsm-data-analysis
+sudo systemctl restart nix-daemon.service
+git clone https://github.com/hardenedlinux/NSM-data-analysis.git
+cd NSM-data-analysis/
+nix-build --option substituters "https://cache.nixos.org https://nsm-data-analysis.cachix.org"
+#+END_EXAMPLE
+
+** For Debian NIX user
+#+begin_src sh :async t :exports both :results output
+wget https://github.com/hardenedlinux/NSM-data-analysis/releases/download/nix/nix_2.3_master_e3eecb5_amd64.deb
+sudo dpkg -i nix_2.3_master_e3eecb5_amd64.deb
+sudo ln -s /opt/nix-multiuser/nix/bin/nix* /usr/local/bin
+
+nix-channel --add https://nixos.org/channels/nixos-19.09 nixpkgs
+nix-channel --update
+export NIX_PATH="$HOME/.nix-defexpr/channels/nixpkgs"
+##for Julia CUDA
+export NIXPKGS_ALLOW_UNFREE=1
+
+source /opt/nix-multiuser/nix/etc/profile.d/nix.sh
+#+end_src
+Also, you can add two paths to your ~.zshrc~ or ~.bash~ file
+
+Building NSM-NIX-env
+
+
+#+begin_src sh :async t :exports both :results output
+git clone https://github.com/hardenedlinux/NSM-data-analysis.git --depth=1 --recurse-submodules
+cd NSM-data-analysis
+nix-build 
+#+end_src
+
+It will generated a ~result~ direcotry under the current directory.
+***  For RPM install User
+#+BEGIN_EXAMPLE
+wget https://github.com/hardenedlinux/NSM-data-analysis/releases/download/nix/nix-2.3-1.x86_64.rpm
+#+END_EXAMPLE
+** load Jupyter kernels
+make sure have you cleaned up Jupyter kernel list.
+- check kernel list
+#+begin_src sh :async t :exports both :results output
+jupyter kernelspec list
+#+end_src
+
+#+RESULTS:
+: Available kernels:
+:   python3             /nix/store/1nfbdgg78l3mjlxfjg8k1mps41wh3xmk-python3-3.7.6-env/lib/python3.7/site-packages/ipykernel/resources
+:   haskell             /home/gtrun/.local/share/jupyter/kernels/haskell
+:   julia-nodeps-1.1    /home/gtrun/.local/share/jupyter/kernels/julia-nodeps-1.1
+
+- clean up you local kernel path before you running ./result/bin/ihaskell-lab or
+  jupyter-notebook
+#+begin_src sh :async t :exports both :results output
+jupyter kernelspec remove python3
+jupyter kernelspec remove haskell
+jupyter kernelspec remove julia-nodeps-1.1
+#+end_src
+if you got all of kernels path from /nix/store/... that will be fine
+** Julia support
+- NVIDIA-Linux cudatoolkit 
+if you would like to use CUDA, just change ~julia-none-cuda.nix~ to ~julia.nix~
+from file(default.nix)
+
+*Remmber* Allow unfree package
+
+#+begin_src sh :async t :exports both :results output
+export NIXPKGS_ALLOW_UNFREE=1
+
+nix-build withR 
+#+end_src
+
+
+Enjoy it!
+
+* Phishing
+** SMTP/email
+*** Deepsea
+- quickly test commmands
+#+begin_src sh :async t :exports both :results output
+- Tow methods: templated and hand-rolled
+
+ ../../result/bin/deepsea --config template.yaml content inline
+
+../../result/bin/deepsea --config template.yaml content multipart
+
+-  create DB and load from CSV
+./result/bin/deepsea -t --config template.yaml storage -D test/deepsea/template.db manager  -T createtable
+
+ - load CSV
+./result/bin/deepsea -t --config template.yaml storage  -d ./template.db load -s ./marks.csv
+
+- show loaded marks of table
+./result/bin/deepsea --config template.yaml   storage  -d ./template.db manager  -T showmarks
+
+- Mail Campaign
+../../result/bin/deepsea mailclient --config template.yaml
+#+end_src
+
+* Sources and Methods
+** OSINT
+** HUMINT
+ Human-source intelligence
+
+** SIGINT
+
+ Signals intelligence
+* threat feeds
+** FIles & MD5
+* Data parsing
+[[https://attack.mitre.org/docs/MITRE_ATTACK_Enterprise_11x17.pdf][MITRE ATTACK Enterprise Placemat V9]]
+** collection
+*** Email
+    - [[https://attack.mitre.org/techniques/T1114/][Technique: Email Collection - MITRE ATT&CK™]]
+**** SMTP-zeek
+* VISUALIZING MALWARE NETWORKS
+* Honeypot
+** [[https://github.com/UHH-ISS/honeygrove][UHH-ISS/honeygrove: A multi-purpose, modular medium-interaction honeypot based on Twisted. - Brave]]
+* cache
+mkdir -p $out/{tbin,spool}
+  touch $out/spool/state.db
+  ls -l aux/zeekctl/tbin/
+  cp aux/zeekctl/bin/zeekctl.in $out/bin/
+#+begin_src sh :async t :exports both :results output
+
+#+end_src
